@@ -1,0 +1,56 @@
+:root{
+  --app-bg:#f5f7fb;
+  --card-bg:#ffffff;
+  --border:#e6e8eb;
+  --text:#303133;
+  --muted:#909399;
+  --brand:#409eff;
+  --success:#67c23a;
+  --danger:#f56c6c;
+  --header-grad: linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #93c5fd 100%);
+
+  /* Element Plus radius & shadows */
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 999px;
+  --el-box-shadow: 0 6px 24px rgba(0,0,0,.06);
+  --el-box-shadow-light: 0 4px 16px rgba(0,0,0,.05);
+  --el-box-shadow-lighter: 0 2px 8px rgba(0,0,0,.04);
+}
+
+body{ background: var(--app-bg); color: var(--text); }
+
+.app-card{ background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; box-shadow: var(--el-box-shadow-light); }
+
+.section{ padding: 16px; }
+
+.table-elegant .el-table__header th{ background: #fafafa; color:#606266; font-weight:600; }
+.table-elegant .el-table{ border-radius: 8px; overflow: hidden; }
+.table-elegant .el-table__row:hover>td{ background: #f9fbff; }
+
+.toolbar{ display:flex; align-items:center; gap:12px; }
+.toolbar .spacer{ flex:1; }
+
+.badge-muted{ color: var(--muted) }
+
+/* Sidebar */
+.app-aside{ background:#ffffff; border-right:1px solid var(--border) }
+.app-aside .logo{ height:64px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#1f2937; }
+.app-aside .el-menu{ border-right:none }
+.app-aside .el-menu-item.is-active{ background: rgba(64,158,255,.08); color: var(--brand); font-weight:600 }
+
+/* Header */
+.app-header{ background: var(--header-grad); color:#fff; border-bottom: none }
+.app-header .title{ font-size: 16px; font-weight:600 }
+.app-header .meta{ color: rgba(255,255,255,.85) }
+
+/* Rounded components */
+.el-button{ border-radius: 10px; }
+.el-input__wrapper{ border-radius: 10px !important; box-shadow: none; border:1px solid var(--border); }
+.el-input__wrapper.is-focus{ box-shadow: 0 0 0 3px rgba(64,158,255,.15) inset; }
+.el-card{ border-radius: 12px; }
+.el-dialog{ border-radius: 14px; overflow: hidden; }
+.el-tag{ border-radius: 999px; }
+
+/* Dialog modifier */
+.modern-dialog :deep(.el-dialog){ border-radius: 14px; }
