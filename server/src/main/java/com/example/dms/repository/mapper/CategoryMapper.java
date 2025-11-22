@@ -1,9 +1,10 @@
-package com.example.dms.mapper;
+package com.example.dms.repository.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.dms.entity.Category;
+import com.example.dms.repository.entity.Category;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface CategoryMapper extends BaseMapper<Category> {
 }
+
