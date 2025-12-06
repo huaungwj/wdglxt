@@ -5,9 +5,14 @@ import 'element-plus/dist/index.css'
 import './styles/theme.css'
 import App from './App.vue'
 import router from './router'
+import permissionDirective from './directives/permission'
 
-createApp(App)
-  .use(createPinia())
-  .use(router)
-  .use(ElementPlus)
-  .mount('#app')
+const app = createApp(App)
+
+app.use(createPinia())
+app.use(router)
+app.use(ElementPlus)
+// 注册权限指令
+app.directive('permission', permissionDirective)
+
+app.mount('#app')

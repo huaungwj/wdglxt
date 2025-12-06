@@ -2,6 +2,9 @@ package com.example.dms.common;
 
 import lombok.Data;
 
+/**
+ * 统一API响应格式
+ */
 @Data
 public class ApiResponse<T> {
     private int code;
