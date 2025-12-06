@@ -49,6 +49,11 @@ public interface DocFileRepository {
     List<DocFile> findByCategoryId(Long categoryId);
 
     /**
+     * 统计某个分类下的文件数量（只统计未删除的）
+     */
+    long countByCategoryId(Long categoryId);
+
+    /**
      * 查找所有未删除的文档
      */
     List<DocFile> findAllActive();

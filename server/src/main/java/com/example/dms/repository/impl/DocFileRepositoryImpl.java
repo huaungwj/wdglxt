@@ -85,6 +85,15 @@ public class DocFileRepositoryImpl implements DocFileRepository {
     }
 
     @Override
+    public long countByCategoryId(Long categoryId) {
+        return docFileMapper.selectCount(
+            new LambdaQueryWrapper<DocFile>()
+                .eq(DocFile::getCategoryId, categoryId)
+                .eq(DocFile::getStatus, 1)
+        );
+    }
+
+    @Override
     public List<DocFile> findAllActive() {
         return docFileMapper.selectList(
             new LambdaQueryWrapper<DocFile>()

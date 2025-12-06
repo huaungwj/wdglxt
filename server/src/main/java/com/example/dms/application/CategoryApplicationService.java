@@ -6,6 +6,7 @@ import com.example.dms.application.dto.CategoryUpdateCommand;
 import com.example.dms.domain.CategoryDomainService;
 import com.example.dms.domain.dto.CategoryDomainDTO;
 import com.example.dms.dto.CategoryTreeNode;
+import com.example.dms.repository.DocFileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,9 +21,11 @@ import java.util.stream.Collectors;
 public class CategoryApplicationService {
 
     private final CategoryDomainService categoryDomainService;
+    private final DocFileRepository docFileRepository;
 
-    public CategoryApplicationService(CategoryDomainService categoryDomainService) {
+    public CategoryApplicationService(CategoryDomainService categoryDomainService, DocFileRepository docFileRepository) {
         this.categoryDomainService = categoryDomainService;
+        this.docFileRepository = docFileRepository;
     }
 
     /**
@@ -40,7 +43,9 @@ public class CategoryApplicationService {
             node.setParentId(dto.getParentId());
             node.setSort(Optional.ofNullable(dto.getSort()).orElse(0));
             node.setLevel(Optional.ofNullable(dto.getLevel()).orElse(0));
-            node.setFileCount(0L);
+            // 查询该分类下的实际文件数量
+            long fileCount = docFileRepository.countByCategoryId(dto.getId());
+            node.setFileCount(fileCount);
             nodeMap.put(dto.getId(), node);
         }
 
