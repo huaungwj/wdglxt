@@ -72,12 +72,6 @@
           </el-dropdown>
         </div>
       </el-header>
-      <div style="background:#fff;border-bottom:1px solid var(--border);padding:8px 20px">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item to="/">首页</el-breadcrumb-item>
-          <el-breadcrumb-item v-if="route.path !== '/'">{{ pageTitle }}</el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
       <el-main style="background: #f0f2f5; padding: 20px">
         <router-view />
       </el-main>

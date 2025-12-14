@@ -34,7 +34,7 @@ CREATE TABLE `doc_category` (
   `download_permission` varchar(100) DEFAULT NULL COMMENT '下载权限标识',
   PRIMARY KEY (`id`),
   KEY `idx_parent` (`parent_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of doc_category
@@ -78,7 +78,7 @@ CREATE TABLE `doc_file` (
   UNIQUE KEY `file_no` (`file_no`),
   KEY `idx_creator` (`creator_id`),
   KEY `idx_category` (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of doc_file
@@ -132,7 +132,7 @@ CREATE TABLE `doc_visit_log` (
   PRIMARY KEY (`id`),
   KEY `idx_file` (`file_id`),
   KEY `idx_user` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of doc_visit_log
@@ -157,7 +157,7 @@ CREATE TABLE `sys_dept` (
   `status` char(1) DEFAULT '0' COMMENT '部门状态（0正常 1停用）',
   PRIMARY KEY (`id`),
   KEY `idx_parent` (`parent_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_dept
@@ -189,7 +189,7 @@ CREATE TABLE `sys_dict` (
   PRIMARY KEY (`id`),
   KEY `idx_type` (`type`),
   KEY `idx_permission` (`permission_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_dict
@@ -217,7 +217,7 @@ CREATE TABLE `sys_menu` (
   `visible` char(1) DEFAULT '0' COMMENT '菜单状态（0显示 1隐藏）',
   `status` char(1) DEFAULT '0' COMMENT '菜单状态（0正常 1停用）',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=204 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=204 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_menu
@@ -271,7 +271,7 @@ CREATE TABLE `sys_permission` (
   UNIQUE KEY `code` (`code`),
   KEY `idx_code` (`code`),
   KEY `idx_type` (`type`)
-) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_permission
@@ -326,7 +326,7 @@ CREATE TABLE `sys_post` (
   UNIQUE KEY `post_code` (`post_code`),
   KEY `idx_post_code` (`post_code`),
   KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='岗位信息表';
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位信息表';
 
 -- ----------------------------
 -- Records of sys_post
@@ -356,7 +356,7 @@ CREATE TABLE `sys_role` (
   `data_scope` char(1) DEFAULT '1' COMMENT '数据权限范围（1全部数据权限 2自定义数据权限 3本部门数据权限 4本部门及以下数据权限 5仅本人数据权限）',
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_role
@@ -377,7 +377,7 @@ CREATE TABLE `sys_role_dept` (
   PRIMARY KEY (`role_id`,`dept_id`),
   KEY `idx_role` (`role_id`),
   KEY `idx_dept` (`dept_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色和部门关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色和部门关联表';
 
 -- ----------------------------
 -- Records of sys_role_dept
@@ -393,7 +393,7 @@ CREATE TABLE `sys_role_menu` (
   `role_id` bigint NOT NULL,
   `menu_id` bigint NOT NULL,
   PRIMARY KEY (`role_id`,`menu_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_role_menu
@@ -453,7 +453,7 @@ CREATE TABLE `sys_role_permission` (
   PRIMARY KEY (`role_id`,`permission_id`),
   KEY `idx_role` (`role_id`),
   KEY `idx_permission` (`permission_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_role_permission
@@ -524,7 +524,7 @@ CREATE TABLE `sys_user` (
   KEY `idx_dept` (`dept_id`),
   KEY `idx_parent` (`parent_id`),
   KEY `idx_dept_path` (`department_path`)
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_user
@@ -544,7 +544,7 @@ CREATE TABLE `sys_user_role` (
   `user_id` bigint NOT NULL,
   `role_id` bigint NOT NULL,
   PRIMARY KEY (`user_id`,`role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
 -- Records of sys_user_role

@@ -1,12 +1,12 @@
 const path = require('path')
 
-// JAR 路径策略：优先 JAR_PATH 环境变量；否则默认 /www/wwwroot/dms/dms-0.0.1-SNAPSHOT.jar
-const jarPath = process.env.JAR_PATH || '/www/wwwroot/dms/dms-0.0.1-SNAPSHOT.jar'
+// JAR 路径策略：优先 JAR_PATH 环境变量；否则默认 /www/wwwroot/dms-wdglxt/dms-0.0.1-SNAPSHOT.jar
+const jarPath = process.env.JAR_PATH || '/www/wwwroot/dms-wdglxt/dms-0.0.1-SNAPSHOT.jar'
 const jarDir = path.dirname(jarPath)
-// 配置路径策略：优先 CONFIG_PATH 环境变量；否则默认 /www/wwwroot/dms/application.yml
+// 配置路径策略：优先 CONFIG_PATH 环境变量；否则默认 /www/wwwroot/dms-wdglxt/application.yml
 const configPath = process.env.CONFIG_PATH || path.join(jarDir, 'application.yml')
-// Java 可执行文件：优先 JAVA_BIN；否则使用你的服务器路径
-const javaBin = process.env.JAVA_BIN || '/www/server/java/jdk-17.0.8/bin/java'
+// Java 可执行文件：优先 JAVA_BIN；否则使用系统默认 java 命令
+const javaBin = process.env.JAVA_BIN || 'java'
 
 module.exports = {
   apps: [

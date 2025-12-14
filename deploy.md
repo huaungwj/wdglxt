@@ -26,8 +26,9 @@
 - **操作系统**：Linux/macOS/Windows（生产环境推荐 Linux）
 - **Java**：JDK 17+
 - **Maven**：3.8+
-- **Node.js**：18 LTS（用于构建前端）
-- **MySQL**：8.x
+- **Node.js**：18 LTS（用于构建前端，使用 PM2 管理后端时也需要）
+- **PM2**：可选，用于管理后端进程（推荐，需要 Node.js）
+- **MySQL**：8.x（或 5.7+，需注意排序规则兼容性）
 - **Nginx**：1.18+（生产环境推荐，用于前端静态资源托管和 API 反向代理）
 
 ---
@@ -89,7 +90,17 @@ SOURCE /path/to/server/src/main/resources/init.sql;
 
 ### 3.1 配置文件
 
-编辑 `server/src/main/resources/application.yml`：
+**方式一：使用外部配置文件（推荐 - 生产环境）**
+
+在 jar 包同级目录创建 `application.yml`，Spring Boot 会自动加载外部配置文件（优先级高于 jar 包内的配置）：
+
+```bash
+# 在部署目录创建配置文件
+sudo mkdir -p /opt/dms
+sudo nano /opt/dms/application.yml
+```
+
+配置文件内容：
 
 ```yaml
 server:
@@ -111,19 +122,37 @@ spring:
       max-file-size: 200MB
       max-request-size: 200MB
 
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: AUTO
+
 file:
-  storage-root: ./uploads  # 文件存储根目录
-  public-prefix: /files     # 文件访问前缀
+  storage-root: /data/dms/uploads  # 文件存储根目录（使用绝对路径）
+  public-prefix: /files             # 文件访问前缀
 
 logging:
   level:
     root: info
 ```
 
+**方式二：修改 jar 包内的配置文件（开发环境）**
+
+编辑 `server/src/main/resources/application.yml`，然后重新打包。
+
+**配置文件优先级：**
+1. 命令行参数（`--spring.config.location`）
+2. jar 包同级目录的 `application.yml`（外部配置）
+3. jar 包内的 `application.yml`（内置配置）
+
 **重要配置说明：**
 - `spring.datasource.*` - 数据库连接配置
-- `file.storage-root` - 文件上传存储目录（建议生产环境使用绝对路径，如 `/data/dms/uploads`）
+- `file.storage-root` - 文件上传存储目录（生产环境建议使用绝对路径，如 `/data/dms/uploads`）
 - `file.public-prefix` - 文件访问 URL 前缀
+- **使用外部配置文件的好处**：修改配置后只需重启服务，无需重新打包 jar
 
 ### 3.2 构建
 
@@ -146,10 +175,98 @@ mvn spring-boot:run
 **生产环境（基础方式）：**
 
 ```bash
-java -jar server/target/dms-0.0.1-SNAPSHOT.jar --server.port=8080
+# 方式1：使用外部配置文件（推荐）
+# 将 application.yml 放在 jar 包同级目录，Spring Boot 会自动加载
+java -jar /opt/dms/dms-0.0.1-SNAPSHOT.jar
+
+# 方式2：通过参数指定配置文件路径
+java -jar /opt/dms/dms-0.0.1-SNAPSHOT.jar --spring.config.location=file:/opt/dms/application.yml
+
+# 方式3：通过命令行参数覆盖配置
+java -jar /opt/dms/dms-0.0.1-SNAPSHOT.jar --server.port=8080 --spring.datasource.password=your_password
 ```
 
-**生产环境（推荐 - systemd）：**
+**生产环境（方式一 - PM2，推荐）：**
+
+使用 PM2 管理 Java 应用进程：
+
+```bash
+# 1. 安装 PM2（如果未安装）
+npm install -g pm2
+
+# 2. 创建部署目录
+mkdir -p /www/wwwroot/dms-wdglxt
+mkdir -p /data/dms/uploads
+
+# 3. 复制 jar 文件和配置文件
+cp server/target/dms-0.0.1-SNAPSHOT.jar /www/wwwroot/dms-wdglxt/
+cp application.yml /www/wwwroot/dms-wdglxt/application.yml
+
+# 4. 修改配置文件（根据实际环境调整）
+vim /www/wwwroot/dms-wdglxt/application.yml
+
+# 5. 使用 PM2 启动（在项目根目录执行）
+pm2 start pm2-ecosystem.config.cjs
+
+# 6. 查看状态
+pm2 status
+pm2 logs dms-backend
+
+# 7. 设置开机自启
+pm2 save
+pm2 startup
+```
+
+**PM2 常用命令：**
+
+```bash
+# 启动应用
+pm2 start pm2-ecosystem.config.cjs
+
+# 停止应用
+pm2 stop dms-backend
+
+# 重启应用
+pm2 restart dms-backend
+
+# 查看日志
+pm2 logs dms-backend
+pm2 logs dms-backend --lines 100  # 查看最近 100 行
+
+# 查看状态
+pm2 status
+pm2 info dms-backend
+
+# 监控
+pm2 monit
+
+# 删除应用
+pm2 delete dms-backend
+
+# 保存当前进程列表（用于开机自启）
+pm2 save
+
+# 设置开机自启
+pm2 startup
+```
+
+**PM2 配置文件说明：**
+
+配置文件 `pm2-ecosystem.config.cjs` 支持通过环境变量自定义路径：
+
+```bash
+# 方式1：使用默认路径（/www/wwwroot/dms-wdglxt）
+pm2 start pm2-ecosystem.config.cjs
+
+# 方式2：通过环境变量自定义路径
+JAR_PATH=/opt/dms/server.jar \
+CONFIG_PATH=/opt/dms/application.yml \
+JAVA_BIN=/usr/bin/java \
+JAVA_OPTS="-Xms512m -Xmx1024m" \
+pm2 start pm2-ecosystem.config.cjs
+```
+
+**生产环境（方式二 - systemd）：**
 
 创建服务文件 `/etc/systemd/system/dms.service`：
 
@@ -162,7 +279,8 @@ After=network.target mysql.service
 Type=simple
 User=www-data
 WorkingDirectory=/opt/dms
-ExecStart=/usr/bin/java -Xms512m -Xmx1024m -jar /opt/dms/dms-0.0.1-SNAPSHOT.jar --server.port=8080
+# 使用外部配置文件（推荐）
+ExecStart=/usr/bin/java -Xms512m -Xmx1024m -jar /opt/dms/dms-0.0.1-SNAPSHOT.jar --spring.config.location=file:/opt/dms/application.yml
 Restart=always
 RestartSec=5
 SuccessExitStatus=143
@@ -178,13 +296,19 @@ WantedBy=multi-user.target
 操作命令：
 
 ```bash
-# 复制 jar 文件到目标目录
+# 创建部署目录
 sudo mkdir -p /opt/dms
-sudo cp server/target/dms-0.0.1-SNAPSHOT.jar /opt/dms/
-sudo chown -R www-data:www-data /opt/dms
-
-# 创建文件存储目录
 sudo mkdir -p /data/dms/uploads
+
+# 复制 jar 文件和配置文件到目标目录
+sudo cp server/target/dms-0.0.1-SNAPSHOT.jar /opt/dms/
+sudo cp application.yml /opt/dms/application.yml
+
+# 修改配置文件（根据实际环境调整数据库密码、文件存储路径等）
+sudo vim /opt/dms/application.yml
+
+# 设置权限
+sudo chown -R www-data:www-data /opt/dms
 sudo chown -R www-data:www-data /data/dms/uploads
 
 # 启动服务
@@ -194,7 +318,33 @@ sudo systemctl start dms
 sudo systemctl status dms
 ```
 
-查看日志：
+**注意**：如果使用外部配置文件，修改配置后只需重启服务即可生效，无需重新打包：
+
+```bash
+# 修改配置文件
+sudo vim /opt/dms/application.yml
+
+# 重启服务使配置生效
+sudo systemctl restart dms
+```
+
+**PM2 查看日志：**
+
+```bash
+# 实时查看日志
+pm2 logs dms-backend -f
+
+# 查看最近 100 行日志
+pm2 logs dms-backend --lines 100
+
+# 查看错误日志
+pm2 logs dms-backend --err
+
+# 清空日志
+pm2 flush dms-backend
+```
+
+**systemd 查看日志：**
 
 ```bash
 # 查看服务日志
@@ -532,6 +682,46 @@ location / {
 
 如需修改，请直接在数据库中操作。
 
+### Q7：如何修改配置而不重新打包？
+
+**A：** 使用外部配置文件（推荐）：
+1. 在 jar 包同级目录创建 `application.yml`（如 `/www/wwwroot/dms-wdglxt/application.yml`）
+2. Spring Boot 会自动加载外部配置文件（优先级高于 jar 包内配置）
+3. 修改配置后重启服务即可
+
+**PM2 方式：**
+```bash
+# 修改配置文件
+vim /www/wwwroot/dms-wdglxt/application.yml
+
+# 重启服务使配置生效
+pm2 restart dms-backend
+```
+
+**systemd 方式：**
+```bash
+# 修改配置文件
+sudo vim /opt/dms/application.yml
+
+# 重启服务使配置生效
+sudo systemctl restart dms
+```
+
+**配置文件优先级：**
+- 命令行参数（`--spring.config.location=file:/path/to/config.yml`）
+- jar 包同级目录的 `application.yml`
+- jar 包内的 `application.yml`
+
+### Q8：PM2 和 systemd 有什么区别？
+
+**A：** 
+- **PM2**：Node.js 生态的进程管理器，适合熟悉 Node.js 环境的开发者，提供丰富的监控和管理功能
+- **systemd**：Linux 系统原生的服务管理器，更底层，适合系统管理员使用
+
+**选择建议：**
+- 如果服务器已安装 Node.js 和 PM2，推荐使用 PM2（更易用）
+- 如果希望使用系统原生服务管理，推荐使用 systemd（更稳定）
+
 ---
 
 ## 10. 快速验证清单（上线前）
@@ -539,6 +729,7 @@ location / {
 - [ ] MySQL 数据库已创建，所有表结构正确
 - [ ] 数据库初始化数据已导入（用户、角色、权限等）
 - [ ] 后端 jar 包构建成功
+- [ ] 外部配置文件已创建（`/www/wwwroot/dms-wdglxt/application.yml` 或 `/opt/dms/application.yml`），数据库密码等配置已修改
 - [ ] 后端服务正常启动，无错误日志
 - [ ] 文件存储目录已创建且有写权限
 - [ ] 前端构建成功，`dist` 目录完整
@@ -548,7 +739,9 @@ location / {
 - [ ] 权限系统正常工作，菜单和按钮权限正确显示
 - [ ] 文件上传/下载功能正常
 - [ ] 日志输出正常
-- [ ] 进程守护配置完成（systemd）
+- [ ] 进程守护配置完成（PM2 或 systemd）
+  - [ ] PM2：`pm2 status` 显示应用运行中，`pm2 save` 已执行
+  - [ ] systemd：`systemctl status dms` 显示 active (running)
 
 ---
 
@@ -556,6 +749,8 @@ location / {
 
 ```
 wdglxt/
+├── application.yml                   # 外部配置文件模板（生产环境使用）
+├── pm2-ecosystem.config.cjs         # PM2 进程管理配置文件
 ├── server/                          # 后端工程
 │   ├── src/main/java/
 │   │   └── com/example/dms/
@@ -568,7 +763,7 @@ wdglxt/
 │   │       ├── common/               # 公共类
 │   │       └── exception/           # 异常处理
 │   ├── src/main/resources/
-│   │   ├── application.yml          # 应用配置
+│   │   ├── application.yml          # 应用配置（开发环境）
 │   │   ├── schema.sql               # 表结构（自动执行）
 │   │   └── init.sql                 # 完整初始化脚本（含数据）
 │   └── pom.xml                      # Maven 配置
@@ -592,22 +787,193 @@ wdglxt/
 
 ### 更新后端
 
+**PM2 方式：**
+
+```bash
+# 1. 停止服务
+pm2 stop dms-backend
+
+# 2. 备份当前版本和配置文件
+mkdir -p /www/wwwroot/dms-wdglxt/backup
+cp /www/wwwroot/dms-wdglxt/dms-0.0.1-SNAPSHOT.jar /www/wwwroot/dms-wdglxt/backup/dms-$(date +%Y%m%d).jar
+cp /www/wwwroot/dms-wdglxt/application.yml /www/wwwroot/dms-wdglxt/backup/application-$(date +%Y%m%d).yml
+
+# 3. 复制新版本 jar 包（配置文件保持不变）
+cp server/target/dms-0.0.1-SNAPSHOT.jar /www/wwwroot/dms-wdglxt/
+
+# 4. 启动服务（使用外部配置文件）
+pm2 start pm2-ecosystem.config.cjs
+
+# 5. 检查服务状态
+pm2 status
+pm2 logs dms-backend --lines 50
+```
+
+**systemd 方式：**
+
 ```bash
 # 1. 停止服务
 sudo systemctl stop dms
 
-# 2. 备份当前版本
+# 2. 备份当前版本和配置文件
+sudo mkdir -p /opt/dms/backup
 sudo cp /opt/dms/dms-0.0.1-SNAPSHOT.jar /opt/dms/backup/dms-$(date +%Y%m%d).jar
+sudo cp /opt/dms/application.yml /opt/dms/backup/application.yml-$(date +%Y%m%d)
 
-# 3. 复制新版本
+# 3. 复制新版本 jar 包（配置文件保持不变）
 sudo cp server/target/dms-0.0.1-SNAPSHOT.jar /opt/dms/
 
-# 4. 启动服务
+# 4. 启动服务（使用外部配置文件）
 sudo systemctl start dms
 
 # 5. 检查服务状态
 sudo systemctl status dms
 ```
+
+**注意**：使用外部配置文件时，更新 jar 包不会影响配置文件，配置修改和版本更新互不干扰。
+
+### 更新前端
+
+```bash
+# 1. 构建新版本
+cd web
+npm run build
+
+# 2. 备份当前版本
+sudo cp -r /var/www/dms-web /var/www/dms-web-backup-$(date +%Y%m%d)
+
+# 3. 部署新版本
+sudo cp -r dist/* /var/www/dms-web/
+
+# 4. 重载 Nginx
+sudo systemctl reload nginx
+```
+
+---
+
+## 13. 技术支持
+
+如遇到问题，请检查：
+1. 后端日志：`journalctl -u dms -f`
+2. Nginx 日志：`/var/log/nginx/error.log`
+3. 浏览器控制台：F12 开发者工具
+4. 数据库连接：`mysql -uroot -p123456 dms -e "SHOW TABLES;"`
+
+---
+
+**最后更新：** 2025-12-03
+
+
+## 12. 版本更新
+
+### 更新后端
+
+```bash
+# 1. 停止服务
+sudo systemctl stop dms
+
+# 2. 备份当前版本和配置
+sudo mkdir -p /opt/dms/backup
+sudo cp /opt/dms/dms-0.0.1-SNAPSHOT.jar /opt/dms/backup/dms-$(date +%Y%m%d).jar
+# 如果使用外部配置文件，也备份一下
+sudo cp /opt/dms/application.yml /opt/dms/backup/application-$(date +%Y%m%d).yml
+
+# 3. 复制新版本 jar 包（注意：不会覆盖外部配置文件）
+sudo cp server/target/dms-0.0.1-SNAPSHOT.jar /opt/dms/
+
+# 4. 检查外部配置文件是否存在（如果不存在，需要创建）
+if [ ! -f /opt/dms/application.yml ]; then
+    echo "警告：外部配置文件不存在，将使用 jar 包内默认配置"
+fi
+
+# 5. 启动服务
+sudo systemctl start dms
+
+# 6. 检查服务状态
+sudo systemctl status dms
+```
+
+**注意：** 使用外部配置文件时，更新 jar 包不会影响配置文件，可以安全地更新应用而不丢失配置。
+
+### 更新前端
+
+```bash
+# 1. 构建新版本
+cd web
+npm run build
+
+# 2. 备份当前版本
+sudo cp -r /var/www/dms-web /var/www/dms-web-backup-$(date +%Y%m%d)
+
+# 3. 部署新版本
+sudo cp -r dist/* /var/www/dms-web/
+
+# 4. 重载 Nginx
+sudo systemctl reload nginx
+```
+
+---
+
+## 13. 技术支持
+
+如遇到问题，请检查：
+1. 后端日志：`journalctl -u dms -f`
+2. Nginx 日志：`/var/log/nginx/error.log`
+3. 浏览器控制台：F12 开发者工具
+4. 数据库连接：`mysql -uroot -p123456 dms -e "SHOW TABLES;"`
+
+---
+
+**最后更新：** 2025-12-03
+
+sudo systemctl reload nginx
+```
+
+---
+
+## 13. 技术支持
+
+如遇到问题，请检查：
+1. 后端日志：`journalctl -u dms -f`
+2. Nginx 日志：`/var/log/nginx/error.log`
+3. 浏览器控制台：F12 开发者工具
+4. 数据库连接：`mysql -uroot -p123456 dms -e "SHOW TABLES;"`
+
+---
+
+**最后更新：** 2025-12-03
+
+
+## 12. 版本更新
+
+### 更新后端
+
+```bash
+# 1. 停止服务
+sudo systemctl stop dms
+
+# 2. 备份当前版本和配置
+sudo mkdir -p /opt/dms/backup
+sudo cp /opt/dms/dms-0.0.1-SNAPSHOT.jar /opt/dms/backup/dms-$(date +%Y%m%d).jar
+# 如果使用外部配置文件，也备份一下
+sudo cp /opt/dms/application.yml /opt/dms/backup/application-$(date +%Y%m%d).yml
+
+# 3. 复制新版本 jar 包（注意：不会覆盖外部配置文件）
+sudo cp server/target/dms-0.0.1-SNAPSHOT.jar /opt/dms/
+
+# 4. 检查外部配置文件是否存在（如果不存在，需要创建）
+if [ ! -f /opt/dms/application.yml ]; then
+    echo "警告：外部配置文件不存在，将使用 jar 包内默认配置"
+fi
+
+# 5. 启动服务
+sudo systemctl start dms
+
+# 6. 检查服务状态
+sudo systemctl status dms
+```
+
+**注意：** 使用外部配置文件时，更新 jar 包不会影响配置文件，可以安全地更新应用而不丢失配置。
 
 ### 更新前端
 

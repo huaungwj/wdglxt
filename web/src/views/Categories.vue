@@ -18,13 +18,13 @@
       default-expand-all
       :indent="24"
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-      <el-table-column label="分类名称" min-width="300" prop="name" show-overflow-tooltip />
-      <el-table-column prop="fileCount" label="文件数量" width="150" align="center">
+      <el-table-column label="分类名称" width="550" prop="name" show-overflow-tooltip />
+      <el-table-column prop="fileCount" label="文件数量" width="450" align="center">
         <template #default="{ row }">
           <el-tag size="small" type="info" round>{{ row.fileCount || 0 }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" align="center">
+      <el-table-column label="操作" width="358" align="center">
         <template #default="{ row }">
           <el-button type="primary" link size="small" @click="openEdit(row)">编辑</el-button>
           <el-button type="danger" link size="small" @click="onDelete(row)">删除</el-button>

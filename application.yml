@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/dms?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456  # 修改为实际数据库密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always  # 自动执行 schema.sql
+      continue-on-error: false
+      schema-locations: classpath:schema.sql
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: AUTO
+
+file:
+  storage-root: ./uploads  # 文件存储根目录（生产环境建议使用绝对路径，如 /data/dms/uploads）
+  public-prefix: /files     # 文件访问前缀
+
+logging:
+  level:
+    root: info
+
