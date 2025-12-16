@@ -278,30 +278,67 @@ const handleFileChange = (file, fileListFromUpload) => {
   
   // 检查是否已存在
   const fileUid = file.uid || file.raw?.uid
+  if (!fileUid) {
+    console.warn('handleFileChange: 无法获取文件 uid', file)
+    return
+  }
+  
   const exists = uploadFiles.value.find(f => {
     const fUid = f.file?.uid || f.file?.raw?.uid
     return fUid === fileUid
   })
   
+  // 如果文件不存在，添加到 uploadFiles
+  // 注意：只有当文件真正是新添加的时候才添加到 uploadFiles
+  // 如果文件已经在 fileList 中但不在 uploadFiles 中，可能是之前被删除的，不应该重新添加
   if (!exists) {
-    uploadFiles.value.push({
-      file: file.raw || file,
-      progress: 0,
-      status: 'pending', // pending, uploading, success, error
-      result: null,
-      categoryId: uploadForm.value.categoryId || null // 初始化为表单中的分类
+    // 检查 fileList 中是否有这个文件
+    const existsInFileList = fileListFromUpload.find(f => {
+      const fUid = f?.uid || f?.raw?.uid
+      return fUid === fileUid
     })
+    
+    // 只有当文件在 fileList 中存在时，才添加到 uploadFiles
+    // 这样可以避免在删除后重新添加文件
+    if (existsInFileList) {
+      uploadFiles.value.push({
+        file: file.raw || file,
+        progress: 0,
+        status: 'pending', // pending, uploading, success, error
+        result: null,
+        categoryId: uploadForm.value.categoryId || null // 初始化为表单中的分类
+      })
+    }
   }
 }
 
 // 文件移除处理（从 el-upload 组件触发）
 const handleFileRemove = (file) => {
   const fileUid = file.uid || file.raw?.uid
+  
+  if (!fileUid) {
+    console.warn('handleFileRemove: 无法获取文件 uid', file)
+    return
+  }
+  
   // 从上传文件列表中移除
+  const beforeCount = uploadFiles.value.length
   uploadFiles.value = uploadFiles.value.filter(f => {
     const fUid = f.file?.uid || f.file?.raw?.uid
     return fUid !== fileUid
   })
+  
+  // 同步更新 fileList（el-upload 组件会自动更新，但我们需要确保一致性）
+  // 注意：el-upload 组件会自动更新 fileList，但为了确保一致性，我们也手动更新
+  fileList.value = fileList.value.filter(f => {
+    const fUid = f?.uid || f?.raw?.uid
+    return fUid !== fileUid
+  })
+  
+  // 验证删除是否成功
+  if (uploadFiles.value.length === beforeCount) {
+    console.warn('handleFileRemove: 删除失败，未在 uploadFiles 中找到对应文件，uid:', fileUid)
+  }
 }
 
 // 移除文件（从表格的删除按钮触发）
@@ -377,14 +414,10 @@ const handleRemoveFile = (row) => {
     console.warn('删除失败，未在 fileList 中找到对应文件，uid:', fileUid)
   }
   
-  // 如果 fileList 被意外清空，但 uploadFiles 还有文件，尝试恢复
-  if (fileList.value.length === 0 && uploadFiles.value.length > 0) {
-    console.warn('fileList 被清空，但 uploadFiles 还有文件，尝试恢复 fileList')
-    // 从 uploadFiles 恢复 fileList，只取 file 对象
-    fileList.value = uploadFiles.value
-      .map(f => f.file)
-      .filter(f => f != null)
-  }
+  // 注意：不要在这里恢复 fileList
+  // 如果 fileList 被清空，可能是因为 el-upload 组件已经正确更新了
+  // 恢复 fileList 可能会导致已删除的文件重新出现
+  // 如果需要恢复，应该在 handleFileChange 中处理，而不是在删除操作中
 }
 
 // 单个文件上传
