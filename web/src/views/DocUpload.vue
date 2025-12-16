@@ -272,9 +272,17 @@ const loadCategories = async () => {
 }
 
 // 文件变化处理
-const handleFileChange = (file, fileList) => {
+const handleFileChange = (file, fileListFromUpload) => {
+  // 同步 el-upload 组件的文件列表
+  fileList.value = fileListFromUpload
+  
   // 检查是否已存在
-  const exists = uploadFiles.value.find(f => f.file.uid === file.uid)
+  const fileUid = file.uid || file.raw?.uid
+  const exists = uploadFiles.value.find(f => {
+    const fUid = f.file?.uid || f.file?.raw?.uid
+    return fUid === fileUid
+  })
+  
   if (!exists) {
     uploadFiles.value.push({
       file: file.raw || file,
@@ -306,28 +314,77 @@ const handleRemoveFile = (row) => {
     return
   }
   
-  // 获取文件的唯一标识
-  const fileUid = fileToRemove.uid || fileToRemove.raw?.uid
+  // 获取文件的唯一标识 - 优先使用 file.uid，如果没有则使用 file.raw.uid
+  let fileUid = fileToRemove.uid
+  if (!fileUid && fileToRemove.raw) {
+    fileUid = fileToRemove.raw.uid
+  }
+  
+  // 如果还是没有 uid，尝试从 row 本身获取
+  if (!fileUid && row.uid) {
+    fileUid = row.uid
+  }
   
   if (!fileUid) {
-    ElMessage.warning('无法获取文件标识')
+    console.error('无法获取文件标识', { row, fileToRemove })
+    ElMessage.warning('无法获取文件标识，删除失败')
     return
   }
+  
+  // 保存删除前的数量用于验证
+  const beforeUploadFilesCount = uploadFiles.value.length
+  const beforeFileListCount = fileList.value.length
   
   // 从上传文件列表中移除（使用严格匹配）
   uploadFiles.value = uploadFiles.value.filter(f => {
     // 获取当前文件的 uid
     const currentFile = f.file || f
-    const currentUid = currentFile.uid || currentFile.raw?.uid
-    // 只有当 uid 完全匹配时才删除
+    let currentUid = currentFile?.uid
+    if (!currentUid && currentFile?.raw) {
+      currentUid = currentFile.raw.uid
+    }
+    // 只有当 uid 存在且完全匹配时才删除
+    // 如果 fileUid 或 currentUid 是 undefined，则保留文件（不删除）
+    if (!fileUid || !currentUid) {
+      return true // 保留文件
+    }
     return currentUid !== fileUid
   })
   
   // 从 el-upload 的文件列表中移除
   fileList.value = fileList.value.filter(f => {
-    const currentUid = f.uid || f.raw?.uid
+    let currentUid = f?.uid
+    if (!currentUid && f?.raw) {
+      currentUid = f.raw.uid
+    }
+    // 只有当 uid 存在且完全匹配时才删除
+    // 如果 fileUid 或 currentUid 是 undefined，则保留文件（不删除）
+    if (!fileUid || !currentUid) {
+      return true // 保留文件
+    }
     return currentUid !== fileUid
   })
+  
+  // 验证删除是否成功
+  const deletedFromUploadFiles = beforeUploadFilesCount - uploadFiles.value.length
+  const deletedFromFileList = beforeFileListCount - fileList.value.length
+  
+  if (deletedFromUploadFiles === 0) {
+    console.warn('删除失败，未在 uploadFiles 中找到对应文件，uid:', fileUid)
+  }
+  
+  if (deletedFromFileList === 0) {
+    console.warn('删除失败，未在 fileList 中找到对应文件，uid:', fileUid)
+  }
+  
+  // 如果 fileList 被意外清空，但 uploadFiles 还有文件，尝试恢复
+  if (fileList.value.length === 0 && uploadFiles.value.length > 0) {
+    console.warn('fileList 被清空，但 uploadFiles 还有文件，尝试恢复 fileList')
+    // 从 uploadFiles 恢复 fileList，只取 file 对象
+    fileList.value = uploadFiles.value
+      .map(f => f.file)
+      .filter(f => f != null)
+  }
 }
 
 // 单个文件上传
