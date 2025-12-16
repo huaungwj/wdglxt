@@ -111,7 +111,50 @@ public class CategoryApplicationService {
      */
     @Transactional
     public void delete(Long id) {
+        // 递归检查该分类及其所有子分类中是否有文件
+        long totalFileCount = countFilesInCategoryAndChildren(id);
+        if (totalFileCount > 0) {
+            throw new RuntimeException("该分类或其子分类中存在文件，无法删除");
+        }
+        
+        // 检查通过后，调用领域服务删除
         categoryDomainService.delete(id);
+    }
+    
+    /**
+     * 递归统计分类及其所有子分类中的文件数量
+     */
+    private long countFilesInCategoryAndChildren(Long categoryId) {
+        // 统计当前分类中的文件数量
+        long fileCount = docFileRepository.countByCategoryId(categoryId);
+        
+        // 查找所有子分类
+        List<CategoryDomainDTO> allCategories = categoryDomainService.findAll();
+        List<Long> childCategoryIds = findAllChildCategoryIds(categoryId, allCategories);
+        
+        // 递归统计所有子分类中的文件数量
+        for (Long childId : childCategoryIds) {
+            fileCount += docFileRepository.countByCategoryId(childId);
+        }
+        
+        return fileCount;
+    }
+    
+    /**
+     * 查找所有子分类ID（递归）
+     */
+    private List<Long> findAllChildCategoryIds(Long parentId, List<CategoryDomainDTO> allCategories) {
+        List<Long> result = new ArrayList<>();
+        
+        for (CategoryDomainDTO category : allCategories) {
+            if (parentId.equals(category.getParentId())) {
+                result.add(category.getId());
+                // 递归查找子分类的子分类
+                result.addAll(findAllChildCategoryIds(category.getId(), allCategories));
+            }
+        }
+        
+        return result;
     }
 
     /**

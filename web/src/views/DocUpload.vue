@@ -286,15 +286,48 @@ const handleFileChange = (file, fileList) => {
   }
 }
 
-// 文件移除处理
+// 文件移除处理（从 el-upload 组件触发）
 const handleFileRemove = (file) => {
-  uploadFiles.value = uploadFiles.value.filter(f => f.file.uid !== file.uid)
+  const fileUid = file.uid || file.raw?.uid
+  // 从上传文件列表中移除
+  uploadFiles.value = uploadFiles.value.filter(f => {
+    const fUid = f.file?.uid || f.file?.raw?.uid
+    return fUid !== fileUid
+  })
 }
 
-// 移除文件
+// 移除文件（从表格的删除按钮触发）
 const handleRemoveFile = (row) => {
-  uploadFiles.value = uploadFiles.value.filter(f => f !== row)
-  fileList.value = fileList.value.filter(f => f.uid !== row.file.uid)
+  // 获取要删除的文件对象
+  const fileToRemove = row.file
+  
+  if (!fileToRemove) {
+    ElMessage.warning('无法获取文件信息')
+    return
+  }
+  
+  // 获取文件的唯一标识
+  const fileUid = fileToRemove.uid || fileToRemove.raw?.uid
+  
+  if (!fileUid) {
+    ElMessage.warning('无法获取文件标识')
+    return
+  }
+  
+  // 从上传文件列表中移除（使用严格匹配）
+  uploadFiles.value = uploadFiles.value.filter(f => {
+    // 获取当前文件的 uid
+    const currentFile = f.file || f
+    const currentUid = currentFile.uid || currentFile.raw?.uid
+    // 只有当 uid 完全匹配时才删除
+    return currentUid !== fileUid
+  })
+  
+  // 从 el-upload 的文件列表中移除
+  fileList.value = fileList.value.filter(f => {
+    const currentUid = f.uid || f.raw?.uid
+    return currentUid !== fileUid
+  })
 }
 
 // 单个文件上传
